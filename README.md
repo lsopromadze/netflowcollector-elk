@@ -33,10 +33,6 @@ sudo chown -R 1000:1000 /var/lib/netflow_es
 ## Docker composer 
 docker-composer.yml
 ```
-#------------------------------------------------------------------------------
-# Portions of this file are Copyright (C)2021 Levan Sopromadze
-#------------------------------------------------------------------------------
-
 version: '3'
 
 services:
