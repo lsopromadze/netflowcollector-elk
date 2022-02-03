@@ -1,6 +1,6 @@
-# NetFlow&trade; Installation
+# NetFlow Collector Installation
 
-NetFlow&trade; is built using the Elastic Stack, including Elasticsearch, Kibana and Elastiflow Flow-Collector. To install and configure NetFlow&trade;, you must first have a working Elastic Stack environment.
+NetFlow Collector is built using the Elastic Stack, including Elasticsearch, Kibana and Elastiflow Flow-Collector. To install and configure NetFlow Collector;, you must first have a working Elastic Stack environment.
 
 
 ## Requirements
@@ -17,7 +17,7 @@ flows/sec | (v)CPUs | Memory | Disk (30-days) | ES JVM Heap | LS JVM Heap
 1500 | 12 | 96 GB | 3 TB | 31 GB | 6 GB
 
 
-## Setting up NetFlow™ on Docker
+## Setting up NetFlow Collector on Docker
 The easiest way to get everything up and running quickly is to use Docker and docker-compose. The following instructions will walk you through setting up a single node installation of ElastiFlow on Docker.
 
 NOTE: These instructions assume that you will have a server available with a recent Linux distribution and both Docker and docker-composer installed.
