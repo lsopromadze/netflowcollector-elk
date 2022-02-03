@@ -189,3 +189,25 @@ Administration - Stack Management - Kibana - Saved Objects - Import
 filename: kibana-7.14.x-codex-dark.ndjson
 ```
 
+## Autostart on Linux with systemd:
+>create /etc/systemd/system/docker-compose-app.service
+```
+[Unit]
+Description=Docker Compose Application Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/netflowcollector-elk/ #CHANGE_TO_YOUR_DIRECTORY
+ExecStart=/usr/local/bin/docker-compose up -d
+ExecStop=/usr/local/bin/docker-compose down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+
+```
+
+> systemctl enable docker-compose-app
