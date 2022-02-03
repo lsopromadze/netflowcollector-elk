@@ -33,6 +33,10 @@ sudo chown -R 1000:1000 /var/lib/netflow_es
 ## Docker composer 
 docker-composer.yml
 ```
+#------------------------------------------------------------------------------
+# Portions of this file are Copyright (C)2021 Levan Sopromadze
+#------------------------------------------------------------------------------
+
 version: '3'
 
 services:
@@ -89,15 +93,15 @@ services:
       LOGGING_QUIET: 'false'
 
 
-  netflow-logstash:
+  netflow-flowcollector:
     image: docker.io/lsopromadze/netflow-flowcollector
     container_name: netflow-flowcollector
     restart: 'unless-stopped'
     network_mode: 'host'
     depends_on:
       - netflow-elasticsearch
-    volumes:
-      - /etc/elastiflow:/etc/elastiflow
+    #volumes:
+    #  - /etc/elastiflow:/etc/elastiflow
     environment:
       LS_JAVA_OPTS: '-Xms4g -Xmx4g'
       EF_FLOW_SERVER_UDP_IP: '0.0.0.0'
@@ -113,10 +117,15 @@ services:
       EF_FLOW_DECODER_ENRICH_DNS_NAMESERVER_IP: ''
       EF_FLOW_DECODER_ENRICH_DNS_NAMESERVER_TIMEOUT: 3000
 
-      EF_FLOW_DECODER_ENRICH_MAXMIND_ASN_ENABLE: 'false'
-      #EF_FLOW_DECODER_ENRICH_MAXMIND_ASN_PATH: 'maxmind/GeoLite2-ASN.mmdb'
+      EF_FLOW_DECODER_ENRICH_MAXMIND_ASN_ENABLE: 'true'
+      EF_FLOW_DECODER_ENRICH_MAXMIND_ASN_PATH: '/etc/elastiflow/GeoLite2-ASN.mmdb'
 
-      EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_ENABLE: 'false'
+      EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_ENABLE: 'true'
+      EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_PATH: '/etc/elastiflow/GeoLite2-City.mmdb'
+      #EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_VALUES: 'city,country,country_code,location,timezone'
+      #EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_LANG: 'en'
+      #EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_INCLEXCL_PATH: 'maxmind/incl_excl.yml'
+      #EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_INCLEXCL_REFRESH_RATE: 15
 
       EF_FLOW_DECODER_ENRICH_RISKIQ_ASN_ENABLE: 'false'
       EF_FLOW_DECODER_ENRICH_RISKIQ_THREAT_ENABLE: 'false'
@@ -130,8 +139,8 @@ services:
       #EF_FLOW_DECODER_ENRICH_CONVERSATIONID_ENABLE: 'true'
       #EF_FLOW_DECODER_ENRICH_CONVERSATIONID_SEED: 0
 
-      #EF_FLOW_DECODER_ENRICH_JOIN_ASN: 'true'
-      #EF_FLOW_DECODER_ENRICH_JOIN_GEOIP: 'true'
+      EF_FLOW_DECODER_ENRICH_JOIN_ASN: 'true'
+      EF_FLOW_DECODER_ENRICH_JOIN_GEOIP: 'true'
       #EF_FLOW_DECODER_ENRICH_JOIN_SEC: 'true'
       #EF_FLOW_DECODER_ENRICH_JOIN_NETATTR: 'true'
       #EF_FLOW_DECODER_ENRICH_JOIN_SUBNETATTR: 'true'
@@ -178,6 +187,7 @@ services:
       #EF_FLOW_OUTPUT_ELASTICSEARCH_RETRY_ON_TIMEOUT_ENABLE: 'true'
       #EF_FLOW_OUTPUT_ELASTICSEARCH_MAX_RETRIES: 3
       #EF_FLOW_OUTPUT_ELASTICSEARCH_RETRY_BACKOFF: 1000
+
 ```
 
 ## Netflow Port
