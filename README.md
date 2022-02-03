@@ -28,8 +28,8 @@ Data written within a container's file system is ephemeral. It will be lost when
 ```
 sudo mkdir /var/lib/netflow_es
 sudo chown -R 1000:1000 /var/lib/netflow_es
-
 ```
+
 ## Docker composer 
 docker-composer.yml
 ```
@@ -183,3 +183,8 @@ services:
       #EF_FLOW_OUTPUT_ELASTICSEARCH_MAX_RETRIES: 3
       #EF_FLOW_OUTPUT_ELASTICSEARCH_RETRY_BACKOFF: 1000
 ```
+
+## Importing Kibana Dashboards
+Administration - Stack Management - Kibana - Saved Objects - Import
+filename: kibana-7.14.x-codex-dark.ndjson
+
