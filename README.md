@@ -184,6 +184,9 @@ services:
       #EF_FLOW_OUTPUT_ELASTICSEARCH_RETRY_BACKOFF: 1000
 ```
 
+## Netflow Port
+Netflow port is set to listen on UDP 5678
+
 ## Importing Kibana Dashboards
 Administration - Stack Management - Kibana - Saved Objects - Import
 ``` 
