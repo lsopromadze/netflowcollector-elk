@@ -22,6 +22,7 @@ The easiest way to get everything up and running quickly is to use Docker and do
 
 NOTE: These instructions assume that you will have a server available with a recent Linux distribution and both Docker and docker-composer installed.
 
+
 ## Prepare the Data Path
 Data written within a container's file system is ephemeral. It will be lost when the container is removed. For the data to persist it is necessary to write the data to the local host's file system using a bind mount. You must create a path on the local host, and set the necessary permissions for the processes within the container to write to it.
 
@@ -29,6 +30,7 @@ Data written within a container's file system is ephemeral. It will be lost when
 sudo mkdir /var/lib/netflow_es
 sudo chown -R 1000:1000 /var/lib/netflow_es
 ```
+
 
 ## Docker composer 
 docker-composer.yml
@@ -56,7 +58,7 @@ services:
     network_mode: host
     volumes:
       # You will need to create the path and permissions on the local file system where Elasticsearch will store data.
-      #   mkdir /var/lib/netiflow_es && chown -R 1000:1000 /var/lib/netiflow_es
+      #   mkdir /var/lib/netflow_es && chown -R 1000:1000 /var/lib/netflow_es
       - /var/lib/netflow_es:/usr/share/elasticsearch/data
     environment:
       ES_JAVA_OPTS: '-Xms4g -Xmx4g'
@@ -91,7 +93,6 @@ services:
 
       LOGGING_DEST: stdout
       LOGGING_QUIET: 'false'
-
 
   netflow-flowcollector:
     image: docker.io/lsopromadze/netflow-flowcollector
@@ -193,6 +194,7 @@ services:
 ## Netflow Port
 Netflow port is set to listen on UDP 5678
 
+
 ## Importing Kibana Dashboards
 Administration - Stack Management - Kibana - Saved Objects - Import
 ``` 
@@ -221,3 +223,7 @@ WantedBy=multi-user.target
 ```
 
 > systemctl enable docker-compose-app
+
+
+## Network device configuration:
+If you are interested in how to configure a network device to send NetFlow, you can read a good article by my friend who helped me with assembly and testing: https://ccie37726.blogspot.com/2022/02/howto-flexible-netflow-with-ios-xe.html
