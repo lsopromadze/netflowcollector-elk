@@ -150,7 +150,12 @@ services:
       EF_OUTPUT_ELASTICSEARCH_PASSWORD: '<CHANGE>'
 ```
 
-## Generating passwords for user elastic and kibana_system:
+## Generating passwords:
+>for the first time bootstrap use this command:
+```bash
+docker exec -it netflowcollector-elk-es_master1-1 bin/elasticsearch-setup-passwords auto 
+```
+>to change already configured password for users elastic and kibana_system:
 ```bash
 docker exec -it netflowcollector-elk-es_master1-1 bin/elasticsearch-reset-password -u kibana_system
 docker exec -it netflowcollector-elk-es_master1-1 bin/elasticsearch-reset-password -u elastic
