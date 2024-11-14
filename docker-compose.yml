@@ -1,6 +1,7 @@
 services:
   es_master1:
-    image: docker.io/lsopromadze/netflow-elasticsearch    
+    image: docker.io/lsopromadze/netflow-elasticsearch
+    container_name: netflow-elastic
     restart: unless-stopped
     hostname: es_master1
     ulimits:
@@ -17,7 +18,7 @@ services:
       - /var/lib/netflow_es:/usr/share/elasticsearch/data   
       - ./ssl:/usr/share/elasticsearch/config/certificates
     environment:
-      ES_JAVA_OPTS: '-Xms12g -Xmx12g'
+      ES_JAVA_OPTS: '-Xms6g -Xmx6g'
       cluster.name: elastiflow
       node.name: es_master1
       bootstrap.memory_lock: 'true'
@@ -40,6 +41,7 @@ services:
 
   kibana:
     image: docker.io/lsopromadze/netflow-kibana
+    container_name: netflow-kibana
     restart: unless-stopped
     hostname: NODE_NAME
     network_mode: host
@@ -67,14 +69,14 @@ services:
   
   flow-collector:
     image: docker.io/lsopromadze/netflow-flowcollector 
-    container_name: flow-collector
+    container_name: netflow-collector
     restart: 'unless-stopped'
     network_mode: 'host'
     volumes:
       - ./elastiflow:/etc/elastiflow
     environment:
       EF_LICENSE_ACCEPTED: 'true'
-      LS_JAVA_OPTS: '-Xms12g -Xmx12g'
+      LS_JAVA_OPTS: '-Xms8g -Xmx8g'
       EF_FLOW_SERVER_UDP_IP: '0.0.0.0'
       EF_FLOW_SERVER_UDP_PORT: 5678
       EF_PROCESSOR_DECODER_NETFLOW9_ENABLE: 'true'
