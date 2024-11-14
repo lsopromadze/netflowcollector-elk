@@ -163,7 +163,7 @@ docker exec -it netflow-elastic bin/elasticsearch-setup-passwords auto
 docker exec -it netflow-elastic bin/elasticsearch-reset-password -u kibana_system
 docker exec -it netflow-elastic bin/elasticsearch-reset-password -u elastic
 ```
-you need to change the password in the docker-compose.yml file [<CHANGE>]
+you need to change the password in the docker-compose.yml file [change]
 
 ## Netflow collector port
 Netflow collector is set to listen on the UDP port 5678
