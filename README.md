@@ -153,12 +153,12 @@ services:
 ## Generating passwords:
 >for the first time bootstrap use this command:
 ```bash
-docker exec -it netflowcollector-elk-es_master1-1 bin/elasticsearch-setup-passwords auto 
+docker exec -it netflow-elastic bin/elasticsearch-setup-passwords auto  
 ```
 >to change already configured password for users elastic and kibana_system:
 ```bash
-docker exec -it netflowcollector-elk-es_master1-1 bin/elasticsearch-reset-password -u kibana_system
-docker exec -it netflowcollector-elk-es_master1-1 bin/elasticsearch-reset-password -u elastic
+docker exec -it netflow-elastic bin/elasticsearch-reset-password -u kibana_system
+docker exec -it netflow-elastic bin/elasticsearch-reset-password -u elastic
 ```
 you need to change the password in the docker-compose.yml file [<CHANGE>]
 
@@ -168,7 +168,7 @@ Netflow collector is set to listen on the UDP port 5678
 ## Importing Kibana Dashboards
 Administration -> Stack Management -> Kibana -> Saved Objects -> Import
 ``` 
-filename: kibana-8.14.x-flow-codex.ndjson
+filename: kibana-8.14.x-flow-ecs.ndjson
 ```
 
 ## Autostart on Linux with systemd (for an old docker-compose version):
