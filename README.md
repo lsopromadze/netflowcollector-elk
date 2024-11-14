@@ -36,6 +36,7 @@ Run bash script from ssl directory:
 ```bash
 cd ssl
  ./generate_certs.sh
+chown -R 1000:1000 ./ssl
 ```
 >[optional] You can change the subject line: 
 ```
