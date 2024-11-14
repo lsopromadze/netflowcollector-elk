@@ -188,6 +188,11 @@ WantedBy=multi-user.target
 ```
 > systemctl enable docker-compose-app
 
+
+## Screens
+<img src="screenshot/001.png" alt="Alt text" width="640"/>
+<img src="screenshot/002.png" alt="Alt text" width="640"/>
+
 ## Network device configuration:
 If you're interested in learning how to configure a network device to send NetFlow data, I recommend checking out this insightful article by my friend. He played a crucial role in helping me with assembly and testing.
 https://ccie37726.blogspot.com/2022/02/howto-flexible-netflow-with-ios-xe.html
