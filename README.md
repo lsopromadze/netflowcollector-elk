@@ -23,11 +23,22 @@ Data stored within a container's file system is ephemeral, meaning it will be lo
 ```
 sudo mkdir /var/lib/netflow_es
 sudo chown -R 1000:1000 /var/lib/netflow_es
+sudo chown -R 1000:1000 ./ssl
 ```
 
 ## Add max_map_count to sysctl.conf
 ```
 echo 'vm.max_map_count = 262144' | sudo tee -a /etc/sysctl.conf sudo sysctl -p
+```
+
+## Certificate Generation
+Run bash script from ssl directory:
+```bash
+ ./ssl/generate_certs.sh
+```
+>[optional] You can change the subject line: 
+```
+-subj "/C=US/ST=SomeState/L=SomeCity/O=ExampleOrg/OU=ExampleUnit/CN=example.com"
 ```
 
 ## Docker compose file
@@ -48,9 +59,10 @@ services:
       fsize: -1
     network_mode: host
     volumes:
-      - /var/lib/netflow_es:/usr/share/elasticsearch/data    
+      - /var/lib/netflow_es:/usr/share/elasticsearch/data   
+      - ./ssl:/usr/share/elasticsearch/config/certificates
     environment:
-      ES_JAVA_OPTS: '-Xms4g -Xmx4g'
+      ES_JAVA_OPTS: '-Xms12g -Xmx12g'
       cluster.name: elastiflow
       node.name: es_master1
       bootstrap.memory_lock: 'true'
@@ -63,7 +75,13 @@ services:
       indices.query.bool.max_clause_count: 8192
       search.max_buckets: 250000
       action.destructive_requires_name: 'true'
-      xpack.security.enabled: 'false'
+      xpack.security.enabled: 'true'
+      xpack.security.transport.ssl.enabled: 'true'
+      xpack.security.authc.realms.file.file1.enabled: 'true'
+      xpack.security.authc.realms.file.file1.order: '0' 
+      xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certificates/transport.key
+      xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certificates/transport.crt
+      xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca.crt
 
   kibana:
     image: docker.io/lsopromadze/netflow-kibana
@@ -88,8 +106,10 @@ services:
       VIS_TYPE_VEGA_ENABLEEXTERNALURLS: 'true'
       XPACK_MAPS_SHOWMAPVISUALIZATIONTYPES: 'true'
       XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: 'ElastiFlow_0123456789_0123456789_0123456789'
-      xpack.security.enabled: 'false'
-
+      xpack.security.enabled: 'true'
+      ELASTICSEARCH_USERNAME: 'kibana_system'
+      ELASTICSEARCH_PASSWORD: '<CHANGE>'
+  
   flow-collector:
     image: docker.io/lsopromadze/netflow-flowcollector 
     container_name: flow-collector
@@ -99,44 +119,50 @@ services:
       - ./elastiflow:/etc/elastiflow
     environment:
       EF_LICENSE_ACCEPTED: 'true'
-      LS_JAVA_OPTS: '-Xms4g -Xmx4g'
+      LS_JAVA_OPTS: '-Xms12g -Xmx12g'
       EF_FLOW_SERVER_UDP_IP: '0.0.0.0'
       EF_FLOW_SERVER_UDP_PORT: 5678
+      EF_PROCESSOR_DECODER_NETFLOW9_ENABLE: 'true'
+      EF_PROCESSOR_DECODE_IPFIX_ENABLE: 'true'
+      EF_PROCESSOR_ENRICH_IPADDR_METADATA_ENABLE: 'false'
+      EF_PROCESSOR_ENRICH_DNS_ENABLE: 'false'
+      EF_PROCESSOR_ENRICH_DNS_NAMESERVER_IP: ''
+      EF_PROCESSOR_ENRICH_DNS_NAMESERVER_TIMEOUT: 3000
+      EF_PROCESSOR_ENRICH_MAXMIND_ASN_ENABLE: 'true'
+      EF_PROCESSOR_ENRICH_MAXMIND_ASN_PATH: '/etc/elastiflow/GeoLite2-ASN.mmdb'
+      EF_PROCESSOR_ENRICH_MAXMIND_GEOIP_ENABLE: 'true'
+      EF_PROCESSOR_ENRICH_MAXMIND_GEOIP_PATH: '/etc/elastiflow/GeoLite2-City.mmdb'
+      EF_PROCESSOR_ENRICH_JOIN_ASN: 'true'
+      EF_PROCESSOR_ENRICH_JOIN_GEOIP: 'true'
       EF_OUTPUT_ELASTICSEARCH_ENABLE: 'true'
       EF_OUTPUT_ELASTICSEARCH_ECS_ENABLE: 'true'
       EF_OUTPUT_ELASTICSEARCH_TIMESTAMP_SOURCE: 'start'
       EF_OUTPUT_ELASTICSEARCH_INDEX_PERIOD: 'rollover'
-      EF_FLOW_DECODER_NETFLOW9_ENABLE: 'true'
-      EF_FLOW_DECODER_ENRICH_IPADDR_METADATA_ENABLE: 'false'
-      EF_FLOW_DECODER_ENRICH_DNS_ENABLE: 'false'
-      EF_FLOW_DECODER_ENRICH_DNS_NAMESERVER_IP: ''
-      EF_FLOW_DECODER_ENRICH_DNS_NAMESERVER_TIMEOUT: 3000
-      EF_FLOW_DECODER_ENRICH_MAXMIND_ASN_ENABLE: 'true'
-      EF_FLOW_DECODER_ENRICH_MAXMIND_ASN_PATH: '/etc/elastiflow/GeoLite2-ASN.mmdb'
-      EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_ENABLE: 'true'
-      EF_FLOW_DECODER_ENRICH_MAXMIND_GEOIP_PATH: '/etc/elastiflow/GeoLite2-City.mmdb'
-      EF_FLOW_DECODER_ENRICH_RISKIQ_ASN_ENABLE: 'false'
-      EF_FLOW_DECODER_ENRICH_RISKIQ_THREAT_ENABLE: 'false'
-      EF_FLOW_DECODER_ENRICH_JOIN_ASN: 'true'
-      EF_FLOW_DECODER_ENRICH_JOIN_GEOIP: 'true'
-      EF_FLOW_OUTPUT_ELASTICSEARCH_ENABLE: 'true'
-      EF_FLOW_OUTPUT_ELASTICSEARCH_ECS_ENABLE: 'false'
-      EF_FLOW_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_SHARDS: 1
-      EF_FLOW_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_REPLICAS: 0
-      EF_FLOW_OUTPUT_ELASTICSEARCH_ADDRESSES: '127.0.0.1:9200'
-      EF_FLOW_OUTPUT_ELASTICSEARCH_TLS_ENABLE: 'false'
-      EF_FLOW_OUTPUT_ELASTICSEARCH_TLS_SKIP_VERIFICATION: 'false'
-      EF_FLOW_OUTPUT_ELASTICSEARCH_TLS_CA_CERT_FILEPATH: ''
-
+      EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_SHARDS: 1
+      EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_REPLICAS: 0
+      EF_OUTPUT_ELASTICSEARCH_ADDRESSES: '127.0.0.1:9200'
+      EF_OUTPUT_ELASTICSEARCH_PROTOCOL: 'https'
+      EF_OUTPUT_ELASTICSEARCH_TLS_ENABLE: 'false'
+      EF_OUTPUT_ELASTICSEARCH_TLS_SKIP_VERIFICATION: 'false'
+      EF_OUTPUT_ELASTICSEARCH_TLS_CA_CERT_FILEPATH: ''
+      EF_OUTPUT_ELASTICSEARCH_USERNAME: 'elastic'
+      EF_OUTPUT_ELASTICSEARCH_PASSWORD: '<CHANGE>'
 ```
 
-## Netflow Port
-Netflow is set to listen on the UDP port 5678
+## Generating passwords for user elastic and kibana_system:
+```bash
+docker exec -it netflowcollector-elk-es_master1-1 bin/elasticsearch-reset-password -u kibana_system
+docker exec -it netflowcollector-elk-es_master1-1 bin/elasticsearch-reset-password -u elastic
+```
+you need to change the password in the docker-compose.yml file [<CHANGE>]
+
+## Netflow collector port
+Netflow collector is set to listen on the UDP port 5678
 
 ## Importing Kibana Dashboards
 Administration -> Stack Management -> Kibana -> Saved Objects -> Import
 ``` 
-filename: kibana-8.2.x-flow-codex.ndjson
+filename: kibana-8.14.x-flow-codex.ndjson
 ```
 
 ## Autostart on Linux with systemd (for an old docker-compose version):
@@ -159,7 +185,6 @@ TimeoutStartSec=0
 WantedBy=multi-user.target
 
 ```
-
 > systemctl enable docker-compose-app
 
 ## Network device configuration:
