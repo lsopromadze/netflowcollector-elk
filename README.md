@@ -34,7 +34,8 @@ echo 'vm.max_map_count = 262144' | sudo tee -a /etc/sysctl.conf sudo sysctl -p
 ## Certificate Generation
 Run bash script from ssl directory:
 ```bash
- ./ssl/generate_certs.sh
+cd ssl
+ ./generate_certs.sh
 ```
 >[optional] You can change the subject line: 
 ```
