@@ -65,7 +65,7 @@ services:
       - /var/lib/netflow_es:/usr/share/elasticsearch/data   
       - ./ssl:/usr/share/elasticsearch/config/certificates
     environment:
-      ES_JAVA_OPTS: '-Xms6g -Xmx6g'
+      ES_JAVA_OPTS: '-Xms8g -Xmx8g'
       cluster.name: elastiflow
       node.name: es_master1
       bootstrap.memory_lock: 'true'
@@ -81,7 +81,7 @@ services:
       xpack.security.enabled: 'true'
       xpack.security.transport.ssl.enabled: 'true'
       xpack.security.authc.realms.file.file1.enabled: 'true'
-      xpack.security.authc.realms.file.file1.order: '0' 
+      xpack.security.authc.realms.file.file1.order: '0'
       xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certificates/transport.key
       xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certificates/transport.crt
       xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca.crt
@@ -110,12 +110,13 @@ services:
       VIS_TYPE_VEGA_ENABLEEXTERNALURLS: 'true'
       XPACK_MAPS_SHOWMAPVISUALIZATIONTYPES: 'true'
       XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: 'ElastiFlow_0123456789_0123456789_0123456789'
-      xpack.security.enabled: 'true'
+      XPACK.SECURITY.ENABLED: 'true'
+      SERVER_PUBLICBASEURL: http://netflow.localdomain:5601
       ELASTICSEARCH_USERNAME: 'kibana_system'
       ELASTICSEARCH_PASSWORD: '<CHANGE>'
-  
+
   flow-collector:
-    image: docker.io/lsopromadze/netflow-flowcollector 
+    image: docker.io/lsopromadze/netflow-flowcollector
     container_name: netflow-collector
     restart: 'unless-stopped'
     network_mode: 'host'
@@ -132,10 +133,10 @@ services:
       EF_PROCESSOR_ENRICH_DNS_ENABLE: 'false'
       EF_PROCESSOR_ENRICH_DNS_NAMESERVER_IP: ''
       EF_PROCESSOR_ENRICH_DNS_NAMESERVER_TIMEOUT: 3000
-      EF_PROCESSOR_ENRICH_MAXMIND_ASN_ENABLE: 'true'
-      EF_PROCESSOR_ENRICH_MAXMIND_ASN_PATH: '/etc/elastiflow/GeoLite2-ASN.mmdb'
-      EF_PROCESSOR_ENRICH_MAXMIND_GEOIP_ENABLE: 'true'
-      EF_PROCESSOR_ENRICH_MAXMIND_GEOIP_PATH: '/etc/elastiflow/GeoLite2-City.mmdb'
+      EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_ASN_ENABLE: 'true'
+      EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_ASN_PATH: '/etc/elastiflow/maxmind/GeoLite2-ASN.mmdb'
+      EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_GEOIP_ENABLE: 'true'
+      EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_GEOIP_PATH: '/etc/elastiflow/maxmind/GeoLite2-City.mmdb'
       EF_PROCESSOR_ENRICH_JOIN_ASN: 'true'
       EF_PROCESSOR_ENRICH_JOIN_GEOIP: 'true'
       EF_OUTPUT_ELASTICSEARCH_ENABLE: 'true'
