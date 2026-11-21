@@ -56,6 +56,7 @@ services:
     environment:
       TELEMETRY_OPTIN: 'false'
       TELEMETRY_ENABLED: 'false'
+      NEWSFEED_ENABLED: 'false'
       SERVER_NAME: 'netflow'
       SERVER_HOST: '0.0.0.0'
       SERVER_PORT: 5601
