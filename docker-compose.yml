@@ -95,9 +95,7 @@ services:
       EF_PROCESSOR_ENRICH_DNS_ENABLE: 'false'
       EF_PROCESSOR_ENRICH_IPADDR_NETINTEL_ENABLE: 'false'   # threat-feed download never completes (times out even at 120s); re-enable if it works later
       EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_ASN_ENABLE: 'true'
-      EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_ASN_PATH: '/etc/elastiflow/maxmind/GeoLite2-ASN.mmdb'
       EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_GEOIP_ENABLE: 'true'
-      EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_GEOIP_PATH: '/etc/elastiflow/maxmind/GeoLite2-City.mmdb'
       EF_PROCESSOR_ENRICH_JOIN_ASN: 'true'
       EF_PROCESSOR_ENRICH_JOIN_GEOIP: 'true'
       EF_OUTPUT_ELASTICSEARCH_ENABLE: 'true'

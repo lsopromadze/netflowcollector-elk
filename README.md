@@ -23,6 +23,122 @@ Without a license key the collector runs in ElastiFlow's Community tier, limited
 
 Prebuilt copies of the same images (amd64) are also on Docker Hub: `lsopromadze/netflow-elasticsearch:9.5.5`, `lsopromadze/netflow-kibana:9.5.5`, `lsopromadze/netflow-flowcollector:7.27.3` (also tagged `latest`). The older 8.16 images are tagged `old`.
 
+## Docker compose file
+`docker-compose.yml` in this repo (secrets come from `.env`, see step 3):
+```yaml
+# Secrets live in .env (chmod 600, not in git): ELASTIC_PASSWORD, KIBANA_SYSTEM_PASSWORD,
+# COLLECTOR_PASSWORD, KIBANA_ENCRYPTION_KEY
+services:
+  es_master1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    container_name: netflow-elastic
+    restart: unless-stopped
+    hostname: es_master1
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 131072
+        hard: 131072
+      nproc: 8192
+      fsize: -1
+    network_mode: host
+    volumes:
+      - /opt/netflow_es:/usr/share/elasticsearch/data
+      - ./ssl:/usr/share/elasticsearch/config/certificates
+    environment:
+      ES_JAVA_OPTS: '-Xms11g -Xmx11g'   # max ~50% of 23 GB RAM
+      ELASTIC_PASSWORD: '${ELASTIC_PASSWORD}'
+      cluster.name: elastiflow
+      node.name: es_master1
+      bootstrap.memory_lock: 'true'
+      # Only Kibana and the collector (both local) talk to ES: keep HTTP and transport on loopback.
+      http.host: '127.0.0.1'
+      http.port: 9200
+      transport.host: '127.0.0.1'
+      transport.port: 9300
+      cluster.initial_master_nodes: 'es_master1'
+      search.max_buckets: 250000
+      action.destructive_requires_name: 'true'
+      cluster.routing.allocation.disk.watermark.low: '85%'
+      cluster.routing.allocation.disk.watermark.high: '90%'
+      cluster.routing.allocation.disk.watermark.flood_stage: '95%'
+      xpack.security.enabled: 'true'
+      xpack.security.transport.ssl.enabled: 'true'
+      xpack.security.authc.realms.file.file1.enabled: 'true'
+      xpack.security.authc.realms.file.file1.order: '0'
+      xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certificates/transport.key
+      xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certificates/transport.crt
+      xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certificates/ca.crt
+      xpack.security.transport.ssl.verification_mode: certificate
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.5.5
+    container_name: netflow-kibana
+    restart: unless-stopped
+    hostname: netflow-kibana
+    network_mode: host
+    depends_on:
+      - es_master1
+    environment:
+      TELEMETRY_OPTIN: 'false'
+      TELEMETRY_ENABLED: 'false'
+      NEWSFEED_ENABLED: 'false'
+      SERVER_NAME: 'netflow'
+      SERVER_HOST: '0.0.0.0'
+      SERVER_PORT: 5601
+      SERVER_MAXPAYLOAD: 8388608
+      SERVER_PUBLICBASEURL: 'http://netflow.localdomain:5601'
+      ELASTICSEARCH_HOSTS: 'http://127.0.0.1:9200'
+      ELASTICSEARCH_USERNAME: 'kibana_system'
+      ELASTICSEARCH_PASSWORD: '${KIBANA_SYSTEM_PASSWORD}'
+      ELASTICSEARCH_REQUESTTIMEOUT: 132000
+      ELASTICSEARCH_SHARDTIMEOUT: 120000
+      UNIFIEDSEARCH_AUTOCOMPLETE_VALUESUGGESTIONS_TIMEOUT: 3000
+      UNIFIEDSEARCH_AUTOCOMPLETE_VALUESUGGESTIONS_TERMINATEAFTER: 2500000
+      VIS_TYPE_VEGA_ENABLEEXTERNALURLS: 'true'
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: '${KIBANA_ENCRYPTION_KEY}'
+      XPACK_SECURITY_ENCRYPTIONKEY: '${KIBANA_ENCRYPTION_KEY}'
+      XPACK_REPORTING_ENCRYPTIONKEY: '${KIBANA_ENCRYPTION_KEY}'
+
+  flow-collector:
+    image: docker.io/elastiflow/flow-collector:7.27.3
+    container_name: netflow-collector
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - es_master1
+    volumes:
+      # Mount only maxmind/ — mounting all of /etc/elastiflow hides flowcoll.yml, app/, settings/, hostname/ from the image.
+      - ./elastiflow/maxmind:/etc/elastiflow/maxmind:ro
+    environment:
+      EF_LICENSE_ACCEPTED: 'true'
+      EF_FLOW_SERVER_UDP_IP: '0.0.0.0'
+      EF_FLOW_SERVER_UDP_PORT: 2055   # NOT 5678: that's MikroTik MNDP broadcast
+      EF_FLOW_SERVER_UDP_READ_BUFFER_MAX_SIZE: 33554432
+      EF_PROCESSOR_DECODE_NETFLOW9_ENABLE: 'true'
+      EF_PROCESSOR_DECODE_IPFIX_ENABLE: 'true'
+      EF_PROCESSOR_ENRICH_IPADDR_METADATA_ENABLE: 'false'
+      EF_PROCESSOR_ENRICH_DNS_ENABLE: 'false'
+      EF_PROCESSOR_ENRICH_IPADDR_NETINTEL_ENABLE: 'false'   # threat-feed download never completes (times out even at 120s); re-enable if it works later
+      EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_ASN_ENABLE: 'true'
+      EF_PROCESSOR_ENRICH_IPADDR_MAXMIND_GEOIP_ENABLE: 'true'
+      EF_PROCESSOR_ENRICH_JOIN_ASN: 'true'
+      EF_PROCESSOR_ENRICH_JOIN_GEOIP: 'true'
+      EF_OUTPUT_ELASTICSEARCH_ENABLE: 'true'
+      EF_OUTPUT_ELASTICSEARCH_ECS_ENABLE: 'true'
+      EF_OUTPUT_ELASTICSEARCH_TIMESTAMP_SOURCE: 'start'
+      EF_OUTPUT_ELASTICSEARCH_INDEX_PERIOD: 'rollover'
+      EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_SHARDS: 1
+      EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_REPLICAS: 0
+      EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_ILM_LIFECYCLE: 'elastiflow'   # policy created in ES: rollover 30gb/1d, delete after 30d
+      EF_OUTPUT_ELASTICSEARCH_ADDRESSES: '127.0.0.1:9200'
+      EF_OUTPUT_ELASTICSEARCH_TLS_ENABLE: 'false'
+      EF_OUTPUT_ELASTICSEARCH_USERNAME: 'elastiflow_writer'
+      EF_OUTPUT_ELASTICSEARCH_PASSWORD: '${COLLECTOR_PASSWORD}'
+```
+
 ## 1. Host preparation
 Put the data on the big disk (adjust the path, and the volume in `docker-compose.yml`, if yours differs):
 ```bash
@@ -157,8 +273,22 @@ The script keeps the previous files as `*.mmdb.prev` and restarts the collector 
 IP Geolocation by DB-IP (https://db-ip.com), licensed under CC BY 4.0.
 
 ## Screens
-<img src="screenshot/001.png" alt="Alt text" width="640"/>
-<img src="screenshot/002.png" alt="Alt text" width="640"/>
+Overview:
+<img src="screenshot/overview.png" alt="ElastiFlow Overview dashboard" width="800"/>
+
+Flows (client / service / server):
+<img src="screenshot/flows.png" alt="ElastiFlow Flows dashboard" width="800"/>
+
+Top services:
+<img src="screenshot/services.png" alt="ElastiFlow Top Services dashboard" width="800"/>
+
+AS traffic:
+<img src="screenshot/as-traffic.png" alt="ElastiFlow AS Traffic dashboard" width="800"/>
+
+Collector health (version, license tier, resource usage):
+<img src="screenshot/collector.png" alt="ElastiFlow Collector metrics dashboard" width="800"/>
+
+(IP addresses are blurred.)
 
 ## Network device configuration
 MikroTik (RouterOS 7):
