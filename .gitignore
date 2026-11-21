@@ -3,3 +3,5 @@ ssl/*.key
 ssl/*.crt
 ssl/*.srl
 *.orig-*
+elastiflow/maxmind/*.mmdb
+elastiflow/maxmind/*.mmdb.prev

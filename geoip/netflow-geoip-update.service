@@ -1,0 +1,7 @@
+[Unit]
+Description=Update DB-IP Lite GeoIP/ASN DBs for netflow collector
+After=docker.service
+Requires=docker.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/netflow-geoip-update

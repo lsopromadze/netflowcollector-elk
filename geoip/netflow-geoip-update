@@ -1,0 +1,36 @@
+#!/bin/bash
+# Refresh GeoIP/ASN databases for the netflow collector from DB-IP Lite (free, no account).
+# DB-IP Lite is licensed CC BY 4.0 — attribution: "IP Geolocation by DB-IP" (https://db-ip.com)
+# Files are saved under the GeoLite2 names the collector is configured to read.
+set -euo pipefail
+DIR=/opt/netflowcollector-elk/elastiflow/maxmind
+TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+changed=0
+
+fetch() {   # $1 = dbip type (city|asn), $2 = target filename
+  local f
+  for m in "$(date +%Y-%m)" "$(date -d '-1 month' +%Y-%m)"; do
+    if curl -fsSL --retry 3 -m 600 -o "$TMP/$1.gz" "https://download.db-ip.com/free/dbip-$1-lite-$m.mmdb.gz"; then
+      gunzip -f "$TMP/$1.gz"
+      f="$TMP/$1"
+      # sanity: valid MMDB (metadata marker present) and not tiny
+      if [ "$(stat -c %s "$f")" -lt 1000000 ] || ! grep -qa $'\xab\xcd\xefMaxMind.com' "$f"; then
+        echo "ERROR: $1-$m does not look like a valid MMDB" >&2; return 1
+      fi
+      if ! cmp -s "$f" "$DIR/$2"; then
+        [ -f "$DIR/$2" ] && cp -p "$DIR/$2" "$DIR/$2.prev"
+        install -m 644 "$f" "$DIR/$2.new" && mv -f "$DIR/$2.new" "$DIR/$2"
+        echo "updated $2 from dbip-$1-lite-$m"; changed=1
+      else
+        echo "$2 already current (dbip-$1-lite-$m)"
+      fi
+      return 0
+    fi
+  done
+  echo "ERROR: could not download dbip-$1-lite" >&2; return 1
+}
+
+fetch city GeoLite2-City.mmdb
+fetch asn  GeoLite2-ASN.mmdb
+[ "$changed" = 1 ] && docker restart netflow-collector >/dev/null && echo "collector restarted"
+exit 0

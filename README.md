@@ -111,8 +111,21 @@ firewall-cmd --reload
 ```
 Narrow the source ranges to your admin network and your exporters.
 
-## GeoIP databases
-The bundled GeoLite2 files are old. Get a free MaxMind license key (https://www.maxmind.com/en/geolite2/signup) and refresh `elastiflow/maxmind/` regularly, e.g. weekly with the official `ghcr.io/maxmind/geoipupdate` container, then `docker restart netflow-collector`.
+## GeoIP / ASN databases (DB-IP Lite)
+GeoIP and ASN enrichment uses the free **DB-IP Lite** databases (no account or license key needed).
+They are saved under the GeoLite2 file names the collector is configured to read, in `elastiflow/maxmind/`.
+The `.mmdb` files are not stored in git (the city database is >100 MB); download them before the first start:
+```bash
+install -m 755 geoip/netflow-geoip-update /usr/local/sbin/
+cp geoip/netflow-geoip-update.service geoip/netflow-geoip-update.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now netflow-geoip-update.timer   # monthly, on the 3rd
+/usr/local/sbin/netflow-geoip-update                # first download now
+```
+The script keeps the previous files as `*.mmdb.prev` and restarts the collector only when the data changed.
+(Edit `DIR=` in the script if the repo is not in `/opt/netflowcollector-elk`.)
+
+IP Geolocation by DB-IP (https://db-ip.com), licensed under CC BY 4.0.
 
 ## Screens
 <img src="screenshot/001.png" alt="Alt text" width="640"/>
