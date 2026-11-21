@@ -19,7 +19,9 @@ The ElastiFlow collector (7.x) is a Go binary, so it needs no JVM heap.
 Software: a recent Linux, Docker with the Compose plugin (`docker compose`), `openssl`.
 
 Versions: Elasticsearch / Kibana **9.5.5** (official `docker.elastic.co` images), ElastiFlow flow collector **7.27.3**, dashboards `kibana-9.5.x-flow-ecs.ndjson` (from [elastiflow_for_elasticsearch](https://github.com/elastiflow/elastiflow_for_elasticsearch)).
-Without a license key the collector runs in ElastiFlow's Community tier, limited to **500 flow records/sec**.
+Without a license key the collector runs in ElastiFlow's Community tier, limited to **500 flow records/sec** — the larger rows of the table above need an ElastiFlow license.
+
+Prebuilt copies of the same images (amd64) are also on Docker Hub: `lsopromadze/netflow-elasticsearch:9.5.5`, `lsopromadze/netflow-kibana:9.5.5`, `lsopromadze/netflow-flowcollector:7.27.3` (also tagged `latest`). The older 8.16 images are tagged `old`.
 
 ## 1. Host preparation
 Put the data on the big disk (adjust the path, and the volume in `docker-compose.yml`, if yours differs):
@@ -98,6 +100,30 @@ curl -u elastic:$ELASTIC_PASSWORD -H kbn-xsrf:true -X POST \
   --form file=@kibana-9.5.x-flow-ecs.ndjson
 ```
 
+## 7. Kibana settings (optional)
+Open the ElastiFlow Overview dashboard on login, use flows as the default data view, and set a fixed time zone (change `Asia/Tbilisi` to yours).
+Kibana 9.x only exposes this endpoint internally, hence the extra header:
+```bash
+curl -u elastic:$ELASTIC_PASSWORD -H kbn-xsrf:true -H x-elastic-internal-origin:kibana \
+  -H Content-Type:application/json -X POST http://127.0.0.1:5601/internal/kibana/settings -d '{"changes":{
+  "defaultRoute":"/app/dashboards#/view/b1e9f8e3-e0c9-4d88-9b9b-5f8d3c6c6d28",
+  "defaultIndex":"elastiflow-flow-ecs-*",
+  "dateFormat:tz":"Asia/Tbilisi",
+  "timepicker:timeDefaults":"{\"from\":\"now-1h\",\"to\":\"now\"}",
+  "home:welcome:show":false,
+  "hideAnnouncements":true}}'
+```
+(`b1e9f8e3-…` is the ID of "ElastiFlow (flow): Overview" in `kibana-9.5.x-flow-ecs.ndjson`.)
+
+## Check that flows are arriving
+Flows per exporter (`host.ip` is the device that sent the flow):
+```bash
+curl -s -u elastic:$ELASTIC_PASSWORD -H Content-Type:application/json \
+  "http://127.0.0.1:9200/elastiflow-flow-ecs-*/_search?size=0" \
+  -d '{"query":{"range":{"@timestamp":{"gte":"now-5m"}}},"aggs":{"exporters":{"terms":{"field":"host.ip"}}}}'
+```
+Divide the counts by 300 for flows/sec. In Kibana, see the "ElastiFlow (flow): Flow Exporters" and "ElastiFlow (metrics): Collector" dashboards.
+
 ## Collector port
 The collector listens on **UDP 2055** (NetFlow v5/v9, IPFIX).
 
@@ -137,7 +163,7 @@ IP Geolocation by DB-IP (https://db-ip.com), licensed under CC BY 4.0.
 ## Network device configuration
 MikroTik (RouterOS 7):
 ```
-/ip traffic-flow set enabled=yes interfaces=all
+/ip traffic-flow set enabled=yes interfaces=all active-flow-timeout=1m inactive-flow-timeout=15s
 /ip traffic-flow target add dst-address=<collector-ip> port=2055 version=9
 ```
 
