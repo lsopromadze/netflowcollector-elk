@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Set file names and validity period
 CA_KEY="ca.key"
@@ -6,7 +7,7 @@ CA_CERT="ca.crt"
 SERVER_KEY="transport.key"
 SERVER_CSR="transport.csr"
 SERVER_CERT="transport.crt"
-DAYS=365
+DAYS=3650
 
 # Generate a CA private key
 echo "Generating CA private key..."
