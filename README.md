@@ -13,7 +13,7 @@ flows/sec | (v)CPUs | Memory | Disk (30-days) | ES JVM Heap
 1000 | 8 | 64 GB | 2 TB | 24 GB
 1500 | 12 | 96 GB | 3 TB | 31 GB
 
-Keep the ES heap at no more than ~50% of RAM (and below 31 GB); the rest is used as page cache by Lucene.
+Keep the ES heap at no more than ~50% of RAM (and below 31 GB; e.g. 11g on a 23 GB host); the rest is used as page cache by Lucene.
 The ElastiFlow collector (7.x) is a Go binary, so it needs no JVM heap.
 
 Software: a recent Linux, Docker with the Compose plugin (`docker compose`), `openssl`.

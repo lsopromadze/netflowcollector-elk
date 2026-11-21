@@ -20,7 +20,7 @@ services:
       - /opt/netflow_es:/usr/share/elasticsearch/data
       - ./ssl:/usr/share/elasticsearch/config/certificates
     environment:
-      ES_JAVA_OPTS: '-Xms8g -Xmx8g'
+      ES_JAVA_OPTS: '-Xms11g -Xmx11g'   # max ~50% of 23 GB RAM
       ELASTIC_PASSWORD: '${ELASTIC_PASSWORD}'
       cluster.name: elastiflow
       node.name: es_master1
