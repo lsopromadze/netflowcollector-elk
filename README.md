@@ -18,6 +18,9 @@ The ElastiFlow collector (7.x) is a Go binary, so it needs no JVM heap.
 
 Software: a recent Linux, Docker with the Compose plugin (`docker compose`), `openssl`.
 
+Versions: Elasticsearch / Kibana **9.5.5** (official `docker.elastic.co` images), ElastiFlow flow collector **7.27.3**, dashboards `kibana-9.5.x-flow-ecs.ndjson` (from [elastiflow_for_elasticsearch](https://github.com/elastiflow/elastiflow_for_elasticsearch)).
+Without a license key the collector runs in ElastiFlow's Community tier, limited to **500 flow records/sec**.
+
 ## 1. Host preparation
 Put the data on the big disk (adjust the path, and the volume in `docker-compose.yml`, if yours differs):
 ```bash
@@ -88,11 +91,11 @@ All containers use `restart: unless-stopped`, so they come back after a reboot a
 Elasticsearch listens on `127.0.0.1` only; Kibana is on port **5601**.
 
 ## 6. Import Kibana dashboards
-Stack Management → Kibana → Saved Objects → Import → `kibana-8.14.x-flow-ecs.ndjson`, or:
+Stack Management → Kibana → Saved Objects → Import → `kibana-9.5.x-flow-ecs.ndjson`, or:
 ```bash
 curl -u elastic:$ELASTIC_PASSWORD -H kbn-xsrf:true -X POST \
   "http://127.0.0.1:5601/api/saved_objects/_import?overwrite=true" \
-  --form file=@kibana-8.14.x-flow-ecs.ndjson
+  --form file=@kibana-9.5.x-flow-ecs.ndjson
 ```
 
 ## Collector port
