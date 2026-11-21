@@ -13,6 +13,9 @@ flows/sec | (v)CPUs | Memory | Disk (30-days) | ES JVM Heap
 1000 | 8 | 64 GB | 2 TB | 24 GB
 1500 | 12 | 96 GB | 3 TB | 31 GB
 
+Measured on a real network: ~370 bytes per flow on disk, so 100 flows/sec is ~3 GB/day (~95 GB per 30 days, ~550 GB for the 180-day retention used here).
+Scale the retention (`delete.min_age` in the ILM policy, step 4) to your disk: at 500 flows/sec, 180 days would need ~2.8 TB.
+
 Keep the ES heap at no more than ~50% of RAM (and below 31 GB; e.g. 11g on a 23 GB host); the rest is used as page cache by Lucene.
 The ElastiFlow collector (7.x) is a Go binary, so it needs no JVM heap.
 
@@ -132,7 +135,7 @@ services:
       EF_OUTPUT_ELASTICSEARCH_INDEX_PERIOD: 'rollover'
       EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_SHARDS: 1
       EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_REPLICAS: 0
-      EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_ILM_LIFECYCLE: 'elastiflow'   # policy created in ES: rollover 30gb/1d, delete after 30d
+      EF_OUTPUT_ELASTICSEARCH_INDEX_TEMPLATE_ILM_LIFECYCLE: 'elastiflow'   # policy created in ES: rollover 30gb/1d, delete after 180d
       EF_OUTPUT_ELASTICSEARCH_ADDRESSES: '127.0.0.1:9200'
       EF_OUTPUT_ELASTICSEARCH_TLS_ENABLE: 'false'
       EF_OUTPUT_ELASTICSEARCH_USERNAME: 'elastiflow_writer'
@@ -195,8 +198,8 @@ $E/_security/user/kibana_system/_password -d "{\"password\":\"$KIBANA_SYSTEM_PAS
 $E/_security/role/elastiflow_writer -XPUT -d '{"cluster":["monitor","manage_index_templates","manage_ilm","manage_pipeline"],"indices":[{"names":["elastiflow-*"],"privileges":["create_index","create_doc","index","write","manage","view_index_metadata","auto_configure"]}]}'
 $E/_security/user/elastiflow_writer -XPUT -d "{\"password\":\"$COLLECTOR_PASSWORD\",\"roles\":[\"elastiflow_writer\"]}"
 
-# Retention: daily rollover, delete after 30 days
-$E/_ilm/policy/elastiflow -XPUT -d '{"policy":{"phases":{"hot":{"actions":{"rollover":{"max_primary_shard_size":"30gb","max_age":"1d"},"set_priority":{"priority":100}}},"warm":{"min_age":"2d","actions":{"forcemerge":{"max_num_segments":1},"set_priority":{"priority":50}}},"delete":{"min_age":"30d","actions":{"delete":{}}}}}}'
+# Retention: daily rollover, delete after 180 days
+$E/_ilm/policy/elastiflow -XPUT -d '{"policy":{"phases":{"hot":{"actions":{"rollover":{"max_primary_shard_size":"30gb","max_age":"1d"},"set_priority":{"priority":100}}},"warm":{"min_age":"2d","actions":{"forcemerge":{"max_num_segments":1},"set_priority":{"priority":50}}},"delete":{"min_age":"180d","actions":{"delete":{}}}}}}'
 ```
 To change a password later: `docker exec -it netflow-elastic bin/elasticsearch-reset-password -u <user>`, then update `.env` and `docker compose up -d`.
 
